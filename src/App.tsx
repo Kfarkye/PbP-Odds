@@ -20,7 +20,7 @@ import { initAuth, googleSignIn, logout } from './firebase';
 import { SportsCalendar } from './components/SportsCalendar';
 import { WinProbabilityChart } from './components/WinProbabilityChart';
 import { PlayerPropProgress } from './components/PlayerPropProgress';
-import { LiveSofaScoreWidget } from './components/LiveSofaScoreWidget';
+import { GameScheduleMock } from './components/GameScheduleMock';
 import { CanonicalTeamCard } from './components/CanonicalTeamCard';
 import { CanonicalPlayerCard } from './components/CanonicalPlayerCard';
 import { CanonicalLeagueCard } from './components/CanonicalLeagueCard';
@@ -1006,7 +1006,7 @@ function ChatInterface({
 
                   <AnimatePresence mode="wait">
                       <motion.div key="sports" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.3, ease: EASE_TRANSITION }} className="w-full flex flex-col items-center">
-                              <div className="w-full max-w-full mb-8"><LiveSofaScoreWidget /></div>
+                              <div className="w-full max-w-full mb-8"><GameScheduleMock /></div>
                       </motion.div>
                   </AnimatePresence>
               </div>

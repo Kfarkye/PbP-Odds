@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react'; // Updated React import
 import { Clock, PlayCircle, AlertCircle } from 'lucide-react'; // Updated Lucide import
 import { motion, AnimatePresence } from 'framer-motion'; // Using framer-motion for consistency
+import { SofaScoreMatchupCard } from './SofaScoreMatchupCard';
 
 // ============================================================================
 // Types
@@ -346,87 +347,36 @@ export function SportsCalendar({ games: propGames, leagueContext }: { games?: Li
                               </h3>
                               <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-6 w-full">
                                   {leagueGames.map((game, idx) => {
-                                      const isHomeWinner = game.status === 'FINAL' && (game.homeScore || 0) > (game.awayScore || 0);
-                                      const isAwayWinner = game.status === 'FINAL' && (game.awayScore || 0) > (game.homeScore || 0);
-
                                       return (
-                                          <motion.article 
-                                            key={`${game.id}-${game.status}`} 
-                                            initial={{ opacity: 0, y: 20 }}
-                                            animate={{ opacity: 1, y: 0 }}
-                                            transition={{ duration: 0.5, delay: Math.min(idx * 0.05, 0.4), ease: [0.16, 1, 0.3, 1] }}
-                                            className="w-full bg-white/[0.02] border border-white/[0.04] rounded-[20px] p-6 hover:bg-white/[0.04] hover:border-white/[0.04] transition-all duration-500 flex flex-col justify-between group select-none outline-none focus-visible:ring-2 focus-visible:ring-white/20 active:scale-[0.98] shadow-sm hover:shadow-[0_24px_60px_-12px_rgba(0,0,0,0.8),0_0_20px_rgba(255,255,255,0.02)] cursor-pointer"
-                                            tabIndex={0}
-                                            role="button"
+                                          <motion.div 
+                                              key={`${game.id}-${game.status}`} 
+                                              initial={{ opacity: 0, y: 20 }}
+                                              animate={{ opacity: 1, y: 0 }}
+                                              transition={{ duration: 0.5, delay: Math.min(idx * 0.05, 0.4), ease: [0.16, 1, 0.3, 1] }}
+                                              className="w-full flex"
                                           >
-                            
-                            {/* Card Header (Time, Status & Network) */}
-                            <div className="flex items-center justify-between mb-8 text-[10px] font-mono tracking-widest uppercase font-medium">
-                              {game.status === 'LIVE' ? (
-                                <span className="text-white flex items-center gap-1.5 drop-shadow-sm truncate max-w-[130px]" title={game.clockOrInning}>
-                                  <span className="truncate">{game.clockOrInning}</span>
-                                </span>
-                              ) : game.status === 'FINAL' ? (
-                                 <span className="text-white/30">FINAL</span>
-                              ) : (
-                                <span className="text-white/40 flex items-center gap-1.5 truncate max-w-[130px]" title={game.time}>
-                                  <Clock className="w-3 h-3 text-white/30" /> <span className="truncate">{game.time}</span>
-                                </span>
-                              )}
-
-                              <div className="flex items-center gap-2 ml-2 shrink-0">
-                                {game.network && (
-                                  <span className="text-white/30 flex items-center gap-1.5 truncate max-w-[60px]" title={game.network}>
-                                    {game.status === 'LIVE' && <PlayCircle className="w-3 h-3 text-white/30 shrink-0" />}
-                                    <span className="truncate">{game.network}</span>
-                                  </span>
-                                )}
-                              </div>
-                            </div>
-
-                            {/* Competitor Row */}
-                            <div className="space-y-5 mb-8 flex-1">
-                              {/* Away Entity */}
-                              <div className="flex items-center justify-between">
-                                <div className="flex items-center gap-4 min-w-0 pr-3">
-                                  <TeamLogo src={game.awayLogo} alt={game.awayAbbr} />
-                                  <span className={`text-[14px] tracking-tight truncate max-w-[140px] font-sans ${isAwayWinner || game.status !== 'FINAL' ? 'font-normal text-white/90' : 'font-normal text-white/40'}`} title={game.awayTeam}>
-                                    {game.awayTeam}
-                                  </span>
-                                </div>
-                                <span className={`text-[16px] font-mono tabular-nums lining-nums shrink-0 ${isAwayWinner || game.status !== 'FINAL' ? 'font-medium text-white' : 'font-normal text-white/40'}`}>
-                                  {game.status !== 'SCHEDULED' ? game.awayScore : '-'}
-                                </span>
-                              </div>
-
-                              {/* Home Entity */}
-                              <div className="flex items-center justify-between">
-                                <div className="flex items-center gap-4 min-w-0 pr-3">
-                                  <TeamLogo src={game.homeLogo} alt={game.homeAbbr} />
-                                  <span className={`text-[14px] tracking-tight truncate max-w-[140px] font-sans ${isHomeWinner || game.status !== 'FINAL' ? 'font-normal text-white/90' : 'font-normal text-white/40'}`} title={game.homeTeam}>
-                                    {game.homeTeam}
-                                  </span>
-                                </div>
-                                <span className={`text-[16px] font-mono tabular-nums lining-nums shrink-0 ${isHomeWinner || game.status !== 'FINAL' ? 'font-medium text-white' : 'font-normal text-white/40'}`}>
-                                  {game.status !== 'SCHEDULED' ? game.homeScore : '-'}
-                                </span>
-                              </div>
-                            </div>
-
-                            {/* Market Odds Footer */}
-                            <div className="mt-auto pt-5 border-t border-white/[0.04]">
-                              <div className="flex items-center justify-end">
-                                {game.odds && game.status !== 'FINAL' ? (
-                                    <span className="text-[10px] font-mono text-white/60 font-medium tracking-tight bg-white/[0.03] border border-white/[0.04] px-2 py-0.5 rounded-[6px] tabular-nums lining-nums truncate max-w-[120px]" title={game.odds}>
-                                        {game.odds}
-                                    </span>
-                                ) : null}
-                              </div>
-                            </div>
-
-                          </motion.article>
-                      );
-                  })}
+                                              <SofaScoreMatchupCard 
+                                                  data={{
+                                                      gameId: game.id,
+                                                      gameState: game.status === 'LIVE' ? (game.clockOrInning || 'LIVE') : (game.status === 'FINAL' ? 'FINAL' : (game.time || 'SCHEDULED')),
+                                                      homeTeamBox: {
+                                                          team: { id: game.homeAbbr, abbreviation: game.homeAbbr, displayName: game.homeTeam, logo: game.homeLogo || '' },
+                                                          runs: game.homeScore ?? 0,
+                                                          hits: 0,
+                                                          errors: 0
+                                                      },
+                                                      awayTeamBox: {
+                                                          team: { id: game.awayAbbr, abbreviation: game.awayAbbr, displayName: game.awayTeam, logo: game.awayLogo || '' },
+                                                          runs: game.awayScore ?? 0,
+                                                          hits: 0,
+                                                          errors: 0
+                                                      },
+                                                      momentumHistory: [],
+                                                  }}
+                                              />
+                                          </motion.div>
+                                      );
+                                  })}
                               </div>
                           </div>
                       ))}
