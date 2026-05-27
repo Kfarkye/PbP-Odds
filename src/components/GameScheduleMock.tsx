@@ -158,11 +158,7 @@ export function SportsCalendar({ games: propGames, leagueContext }: { games?: Li
 
         let parsedGames: LiveGame[] = [];
 
-        // Handle single aggregated server proxy payload vs raw direct endpoints
-        if (isProd && results[0].status === 'fulfilled') {
-            parsedGames = results[0].value.games || []; // Assuming proxy returns { games: [...] }
-        } else {
-            for (const result of results) {
+        for (const result of results) {
                 if (result.status === 'fulfilled' && result.value?.events) {
                     const leagueData = result.value;
                     const events = leagueData.events;
@@ -250,7 +246,6 @@ export function SportsCalendar({ games: propGames, leagueContext }: { games?: Li
                     });
                 }
             }
-        }
 
         // Institutional Sorting: LIVE -> SCHEDULED -> FINAL
         parsedGames.sort((a, b) => {
