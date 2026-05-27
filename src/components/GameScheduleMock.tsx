@@ -125,10 +125,7 @@ export function SportsCalendar({ games: propGames, leagueContext }: { games?: Li
     setLoading(true);
     setError(null);
     try {
-        const isProd = process.env.NODE_ENV === 'production';
-        const endpoints = isProd 
-          ? [{ url: '/api/sports/slate', league: 'PROXY' }] // Production routes through a single backend proxy
-          : [ // Development fetches directly from ESPN
+        const endpoints = [ // Fetch directly from ESPN
             { url: 'https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard?limit=50', league: 'NBA' },
             { url: 'https://site.api.espn.com/apis/site/v2/sports/basketball/wnba/scoreboard?limit=50', league: 'WNBA' },
             { url: 'https://site.api.espn.com/apis/site/v2/sports/hockey/nhl/scoreboard?limit=50', league: 'NHL' },
@@ -143,7 +140,7 @@ export function SportsCalendar({ games: propGames, leagueContext }: { games?: Li
             { url: 'https://site.api.espn.com/apis/site/v2/sports/soccer/uefa.champions/scoreboard?limit=50', league: 'UCL' },
             { url: 'https://site.api.espn.com/apis/site/v2/sports/tennis/atp/scoreboard?limit=150', league: 'ATP' },
             { url: 'https://site.api.espn.com/apis/site/v2/sports/tennis/wta/scoreboard?limit=150', league: 'WTA' }
-          ];
+        ];
 
         // Filter endpoints by leagueContext if provided
         const filteredEndpoints = leagueContext ? endpoints.filter(ep => ep.league.toLowerCase() === leagueContext.toLowerCase()) : endpoints;
