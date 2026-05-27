@@ -1,6 +1,6 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react'; // Updated React import
-import { Clock, PlayCircle, AlertCircle } from 'lucide-react'; // Updated Lucide import
-import { motion, AnimatePresence } from 'framer-motion'; // Using framer-motion for consistency
+import React, { useState, useEffect, useCallback } from 'react';
+import { AlertCircle } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { SofaScoreMatchupCard } from './SofaScoreMatchupCard';
 
 // ============================================================================
@@ -25,43 +25,8 @@ export interface LiveGame {
   timestamp: number;
 }
 
-const SPRING_TRANSITION = { type: "spring" as const, stiffness: 400, damping: 30 };
-const EASE_TRANSITION = [0.16, 1, 0.3, 1];
-
 // ============================================================================
-// Safe Image Handler (Hydration Safe & Headshot/Flag Compatible) - REFINED
-// ============================================================================
-const TeamLogo = React.memo(({ src, alt }: { src?: string; alt: string }) => {
-    const [hasError, setHasError] = useState(false);
-
-    if (hasError || !src) {
-        return (
-            <div className="w-9 h-9 rounded-full bg-neutral-800 border border-white/[0.04] flex items-center justify-center shrink-0 shadow-inner">
-                <span className="text-[10px] font-mono text-neutral-500 tracking-widest font-bold">
-                    {alt.substring(0, 3).toUpperCase()}
-                </span>
-            </div>
-        );
-    }
-
-    return (
-        <div className="w-10 h-10 flex items-center justify-center bg-white/[0.02] rounded-full p-2 border border-white/[0.04] shrink-0 overflow-hidden shadow-sm transition-all duration-300 group-hover:bg-white/[0.04]">
-            <img 
-                src={src} 
-                alt={alt} 
-                className="w-full h-full object-contain opacity-80 drop-shadow-sm grayscale-[0.2] transition-all duration-500 ease-out group-hover:grayscale-0 group-hover:opacity-100 group-hover:scale-110"
-                onError={() => setHasError(true)}
-                loading="lazy"
-                decoding="async"
-                referrerPolicy="no-referrer"
-            />
-        </div>
-    );
-});
-TeamLogo.displayName = 'TeamLogo';
-
-// ============================================================================
-// Skeleton Loader (Zero CLS) - REFINED
+// Skeleton Loader (Zero CLS)
 // ============================================================================
 const ScheduleSkeleton = () => (
     <div className="w-full bg-neutral-900 border border-white/[0.04] rounded-[24px] p-6 animate-pulse shadow-sm">
@@ -93,21 +58,20 @@ const ScheduleSkeleton = () => (
 );
 
 // ============================================================================
-// Primary Component (SportsCalendar) - PRODUCTION-GRADE
-// Renamed to SportsCalendar for consistency with App.tsx imports
+// Primary Component (SportsCalendar)
 // ============================================================================
 export function SportsCalendar({ games: propGames, leagueContext }: { games?: LiveGame[]; leagueContext?: string; }) {
   const [games, setGames] = useState<LiveGame[]>(propGames || []);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [hasHydrated, setHasHydrated] = useState(false); // Safeguard against Timezone Hydration mismatch
+  const [hasHydrated, setHasHydrated] = useState(false);
 
   // Hydration check for client-side rendering of localized dates
   useEffect(() => {
     setHasHydrated(true);
   }, []);
 
-  // Sync propGames with internal state, and set loading to false if propGames provided
+  // Sync propGames with internal state
   useEffect(() => {
     if (propGames && propGames.length > 0) {
       setGames(propGames);
@@ -120,12 +84,12 @@ export function SportsCalendar({ games: propGames, leagueContext }: { games?: Li
     }
   }, [propGames]);
 
-  // Autonomous Multi-League Live Data Fetcher (Enhanced for Production)
+  // Autonomous Multi-League Live Data Fetcher
   const fetchSchedule = useCallback(async (signal?: AbortSignal) => {
     setLoading(true);
     setError(null);
     try {
-        const endpoints = [ // Fetch directly from ESPN
+        const endpoints = [
             { url: 'https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard?limit=50', league: 'NBA' },
             { url: 'https://site.api.espn.com/apis/site/v2/sports/basketball/wnba/scoreboard?limit=50', league: 'WNBA' },
             { url: 'https://site.api.espn.com/apis/site/v2/sports/hockey/nhl/scoreboard?limit=50', league: 'NHL' },
@@ -142,12 +106,11 @@ export function SportsCalendar({ games: propGames, leagueContext }: { games?: Li
             { url: 'https://site.api.espn.com/apis/site/v2/sports/tennis/wta/scoreboard?limit=150', league: 'WTA' }
         ];
 
-        // Filter endpoints by leagueContext if provided
         const filteredEndpoints = leagueContext ? endpoints.filter(ep => ep.league.toLowerCase() === leagueContext.toLowerCase()) : endpoints;
-
+        
         const results = await Promise.allSettled(
             filteredEndpoints.map(ep => 
-                fetch(ep.url, { signal }) // Pass abort signal to fetch
+                fetch(ep.url, { signal })
                 .then(r => {
                     if (!r.ok) throw new Error(`HTTP ${r.status} for ${ep.league}`);
                     return r.json();
@@ -159,93 +122,94 @@ export function SportsCalendar({ games: propGames, leagueContext }: { games?: Li
         let parsedGames: LiveGame[] = [];
 
         for (const result of results) {
-                if (result.status === 'fulfilled' && result.value?.events) {
-                    const leagueData = result.value;
-                    const events = leagueData.events;
+            if (result.status === 'fulfilled' && result.value?.events) {
+                const leagueData = result.value;
+                const events = leagueData.events;
 
-                    events.forEach((event: any) => {
-                        try {
-                            const comp = event.competitions?.[0];
-                            if (!comp) return;
+                events.forEach((event: any) => {
+                    try {
+                        const comp = event.competitions?.[0];
+                        if (!comp) return;
 
-                            const homeRaw = comp.competitors?.find((c: any) => c.homeAway === 'home') || comp.competitors?.[0];
-                            const awayRaw = comp.competitors?.find((c: any) => c.homeAway === 'away') || comp.competitors?.[1];
-                            if (!homeRaw || !awayRaw) return;
+                        const homeRaw = comp.competitors?.find((c: any) => c.homeAway === 'home') || comp.competitors?.[0];
+                        const awayRaw = comp.competitors?.find((c: any) => c.homeAway === 'away') || comp.competitors?.[1];
+                        if (!homeRaw || !awayRaw) return;
 
-                            const homeEntity = homeRaw.team || homeRaw.athlete || homeRaw.player || homeRaw;
-                            const awayEntity = awayRaw.team || awayRaw.athlete || awayRaw.player || awayRaw;
+                        const homeEntity = homeRaw.team || homeRaw.athlete || homeRaw.player || homeRaw;
+                        const awayEntity = awayRaw.team || awayRaw.athlete || awayRaw.player || awayRaw;
 
-                            const state = comp.status?.type?.state;
-                            let status: LiveGame['status'] = 'SCHEDULED';
-                            if (state === 'in') status = 'LIVE';
-                            if (state === 'post') status = 'FINAL';
+                        const state = comp.status?.type?.state;
+                        let status: LiveGame['status'] = 'SCHEDULED';
+                        if (state === 'in') status = 'LIVE';
+                        if (state === 'post') status = 'FINAL';
 
-                            let timeStr = comp.status?.type?.shortDetail || 'TBD';
-                            if (status === 'SCHEDULED' && event.date) {
-                                const dateObj = new Date(event.date);
-                                timeStr = hasHydrated // Only localize date client-side
-                                    ? (!isNaN(dateObj.getTime()) ? dateObj.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }) : timeStr)
-                                    : timeStr; // Server-side render raw string
-                            }
-
-                            let oddsStr = comp.odds?.[0]?.details;
-                            if (oddsStr?.toLowerCase() === 'even') oddsStr = 'PK';
-
-                            const homeName = homeEntity.displayName || homeEntity.name || homeEntity.fullName || 'Home';
-                            const awayName = awayEntity.displayName || awayEntity.name || awayEntity.fullName || 'Away';
-
-                            const getAbbr = (entity: any, name: string, fallback: string) => {
-                                if (entity.abbreviation) return entity.abbreviation;
-                                if (entity.shortName) return entity.shortName;
-                                if (leagueData._league === 'ATP' || leagueData._league === 'WTA') {
-                                    const parts = name.trim().split(' ');
-                                    return parts[parts.length - 1].substring(0, 3).toUpperCase();
-                                }
-                                return fallback;
-                            };
-
-                            const extractLogo = (entity: any, raw: any) => {
-                                return entity.headshot?.href || 
-                                       entity.headshot || 
-                                       entity.logo || 
-                                       entity.logos?.[0]?.href || 
-                                       entity.flag?.href || 
-                                       raw.athlete?.flag?.href || 
-                                       undefined;
-                            };
-
-                            // FIX: Tennis set-score aggregation safeguard
-                            const isTennis = leagueData._league === 'ATP' || leagueData._league === 'WTA';
-                            const homeScoreVal = isTennis ? homeRaw.score : (homeRaw.score !== undefined ? homeRaw.score : (homeRaw.linescores && homeRaw.linescores.length > 0) ? homeRaw.linescores.map((ls:any)=>ls.value).join('-') : undefined);
-                            const awayScoreVal = isTennis ? awayRaw.score : (awayRaw.score !== undefined ? awayRaw.score : (awayRaw.linescores && awayRaw.linescores.length > 0) ? awayRaw.linescores.map((ls:any)=>ls.value).join('-') : undefined);
-                            
-                            const pHomeScore = parseInt(homeScoreVal, 10);
-                            const pAwayScore = parseInt(awayScoreVal, 10);
-
-                            parsedGames.push({
-                                id: event.id,
-                                league: leagueData._league,
-                                homeTeam: homeName,
-                                homeAbbr: getAbbr(homeEntity, homeName, 'HM'),
-                                homeLogo: extractLogo(homeEntity, homeRaw),
-                                homeScore: status !== 'SCHEDULED' && !isNaN(pHomeScore) ? pHomeScore : undefined,
-                                awayTeam: awayName,
-                                awayAbbr: getAbbr(awayEntity, awayName, 'AW'),
-                                awayLogo: extractLogo(awayEntity, awayRaw),
-                                awayScore: status !== 'SCHEDULED' && !isNaN(pAwayScore) ? pAwayScore : undefined,
-                                time: timeStr,
-                                network: comp.broadcasts?.[0]?.names?.[0],
-                                odds: oddsStr,
-                                status,
-                                clockOrInning: comp.status?.type?.shortDetail,
-                                timestamp: new Date(event.date).getTime()
-                            });
-                        } catch (parseErr) {
-                            console.warn(`[AURA:SCHEDULE] Suppressed parse error for event ${event?.id}:`, parseErr);
+                        let timeStr = comp.status?.type?.shortDetail || 'TBD';
+                        
+                        // Safe to localize directly since fetchSchedule only runs client-side inside useEffect
+                        if (status === 'SCHEDULED' && event.date) {
+                            const dateObj = new Date(event.date);
+                            timeStr = !isNaN(dateObj.getTime()) 
+                                ? dateObj.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }) 
+                                : timeStr;
                         }
-                    });
-                }
+
+                        let oddsStr = comp.odds?.[0]?.details;
+                        if (oddsStr?.toLowerCase() === 'even') oddsStr = 'PK';
+
+                        const homeName = homeEntity.displayName || homeEntity.name || homeEntity.fullName || 'Home';
+                        const awayName = awayEntity.displayName || awayEntity.name || awayEntity.fullName || 'Away';
+
+                        const getAbbr = (entity: any, name: string, fallback: string) => {
+                            if (entity.abbreviation) return entity.abbreviation;
+                            if (entity.shortName) return entity.shortName;
+                            if (leagueData._league === 'ATP' || leagueData._league === 'WTA') {
+                                const parts = name.trim().split(' ');
+                                return parts[parts.length - 1].substring(0, 3).toUpperCase();
+                            }
+                            return fallback;
+                        };
+
+                        const extractLogo = (entity: any, raw: any) => {
+                            return entity.headshot?.href || 
+                                   entity.headshot || 
+                                   entity.logo || 
+                                   entity.logos?.[0]?.href || 
+                                   entity.flag?.href || 
+                                   raw.athlete?.flag?.href || 
+                                   undefined;
+                        };
+
+                        const isTennis = leagueData._league === 'ATP' || leagueData._league === 'WTA';
+                        const homeScoreVal = isTennis ? homeRaw.score : (homeRaw.score !== undefined ? homeRaw.score : (homeRaw.linescores && homeRaw.linescores.length > 0) ? homeRaw.linescores.map((ls:any)=>ls.value).join('-') : undefined);
+                        const awayScoreVal = isTennis ? awayRaw.score : (awayRaw.score !== undefined ? awayRaw.score : (awayRaw.linescores && awayRaw.linescores.length > 0) ? awayRaw.linescores.map((ls:any)=>ls.value).join('-') : undefined);
+                        
+                        const pHomeScore = parseInt(homeScoreVal, 10);
+                        const pAwayScore = parseInt(awayScoreVal, 10);
+
+                        parsedGames.push({
+                            id: event.id,
+                            league: leagueData._league,
+                            homeTeam: homeName,
+                            homeAbbr: getAbbr(homeEntity, homeName, 'HM'),
+                            homeLogo: extractLogo(homeEntity, homeRaw),
+                            homeScore: status !== 'SCHEDULED' && !isNaN(pHomeScore) ? pHomeScore : undefined,
+                            awayTeam: awayName,
+                            awayAbbr: getAbbr(awayEntity, awayName, 'AW'),
+                            awayLogo: extractLogo(awayEntity, awayRaw),
+                            awayScore: status !== 'SCHEDULED' && !isNaN(pAwayScore) ? pAwayScore : undefined,
+                            time: timeStr,
+                            network: comp.broadcasts?.[0]?.names?.[0],
+                            odds: oddsStr,
+                            status,
+                            clockOrInning: comp.status?.type?.shortDetail,
+                            timestamp: new Date(event.date).getTime()
+                        });
+                    } catch (parseErr) {
+                        console.warn(`[AURA:SCHEDULE] Suppressed parse error for event ${event?.id}:`, parseErr);
+                    }
+                });
             }
+        }
 
         // Institutional Sorting: LIVE -> SCHEDULED -> FINAL
         parsedGames.sort((a, b) => {
@@ -258,24 +222,33 @@ export function SportsCalendar({ games: propGames, leagueContext }: { games?: Li
         setGames(parsedGames);
         setLoading(false);
     } catch (e: any) {
-        if (e.name !== 'AbortError') console.error('[AURA:SCHEDULE] Sync Failure:', e.message);
-        setError(e.message || "Failed to fetch schedule.");
-        setLoading(false);
+        if (e.name !== 'AbortError') {
+            console.error('[AURA:SCHEDULE] Sync Failure:', e.message);
+            setError(e.message || "Failed to fetch schedule.");
+            setLoading(false);
+        }
     }
-  }, [leagueContext, hasHydrated]); // Added hasHydrated to dependencies to trigger re-fetch on client-side hydrate
+  }, [leagueContext]); // Removed hasHydrated to prevent double-fetch on mount
 
   // Initial fetch and auto-refresh
   useEffect(() => {
-    const controller = new AbortController();
-    fetchSchedule(controller.signal); // Pass initial abort signal
+    // If propGames are provided, disable autonomous fetching to prevent overwriting props
+    if (propGames !== undefined) return;
 
-    const intervalId = setInterval(() => fetchSchedule(controller.signal), 30000); // Refresh every 30 seconds
+    const controller = new AbortController();
+    
+    fetchSchedule(controller.signal);
+    
+    const intervalId = setInterval(() => {
+        // We don't pass the unmount controller signal to the interval to avoid AbortError on subsequent ticks
+        fetchSchedule(); 
+    }, 30000);
     
     return () => {
-        controller.abort(); // Instantly cancel all pending network sockets on unmount
+        controller.abort(); 
         clearInterval(intervalId);
     };
-  }, [fetchSchedule]);
+  }, [fetchSchedule, propGames]);
 
   const groupedGames = React.useMemo(() => {
     return games.reduce((acc, game) => {
@@ -286,7 +259,7 @@ export function SportsCalendar({ games: propGames, leagueContext }: { games?: Li
     }, {} as Record<string, LiveGame[]>);
   }, [games]);
 
-  if (!hasHydrated) { // Render skeleton until hydration is complete
+  if (!hasHydrated) {
       return (
           <div className="w-[100vw] max-w-[1600px] left-1/2 -translate-x-1/2 px-4 sm:px-8 my-8 font-sans overflow-hidden relative group/schedule">
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 w-full">
@@ -299,11 +272,10 @@ export function SportsCalendar({ games: propGames, leagueContext }: { games?: Li
       );
   }
 
-  if (!loading && games.length === 0 && !error) return null; // Collapse if slate is entirely empty and no error
+  if (!loading && games.length === 0 && !error) return null;
 
   return (
     <div className="w-[100vw] max-w-[1600px] left-1/2 -translate-x-1/2 px-4 sm:px-8 my-8 font-sans overflow-hidden relative group/schedule">
-      
       <div className="w-full relative">
           <AnimatePresence mode="wait">
               {loading ? (
