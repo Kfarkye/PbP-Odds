@@ -1,0 +1,8 @@
+{
+  "name": "Aura V2",
+  "description": "An AI-powered enterprise orchestration platform focusing on workspace integration, AI-governed development, and real-time contextual information retrieval.",
+  "requestFramePermissions": [
+    "microphone"
+  ],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

@@ -1,0 +1,28 @@
+{
+  "entities": {
+    "Query": {
+      "title": "Query",
+      "description": "User query and its resulting SDUI artifacts",
+      "type": "object",
+      "properties": {
+        "status": { "type": "string", "enum": ["pending", "completed", "error"] },
+        "message": { "type": "string" },
+        "response": { 
+          "type": "object",
+          "properties": {
+             "artifacts": { "type": "array" }
+          }
+        },
+        "createdAt": { "type": "number" },
+        "updatedAt": { "type": "number" }
+      },
+      "required": ["status", "message", "createdAt"]
+    }
+  },
+  "firestore": {
+    "queries/{queryId}": {
+      "schema": { "$ref": "#/entities/Query" },
+      "description": "Collection of user queries"
+    }
+  }
+}
