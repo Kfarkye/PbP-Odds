@@ -431,7 +431,7 @@ async function requireCronAuth(req: Request, res: Response, next: NextFunction):
 
 async function startServer() {
   const app = express();
-  const PORT = 3000;
+  const PORT = process.env.PORT ? parseInt(process.env.PORT) : 3000;
 
   const tasksClient = new CloudTasksClient();
   const JOBS_COLLECTION = 'mcp_deployments';
